@@ -14,7 +14,9 @@ import requests
 TG_API_ID = int(os.getenv("TG_API_ID"))
 TG_API_HASH = os.getenv("TG_API_HASH")
 TG_SESSION = os.getenv("TG_SESSION")
-GEMINI_KEY_GENERAL = os.getenv("GEMINI_KEY_GENERAL")
+
+# تم تغيير الاسم هنا إلى MATCH
+GEMINI_KEY_MATCH = os.getenv("GEMINI_KEY_MATCH")
 
 GEMINI_MODEL = "gemini-flash-lite-latest"
 STATE_FILE = "relay_state.json"
@@ -121,7 +123,7 @@ async def process_batch(source_id, messages):
         print("⏭️ تجاهل: منشور مكرر")
         return
 
-    final_text = call_match_links(raw_text, GEMINI_KEY_GENERAL)
+    final_text = call_match_links(raw_text, GEMINI_KEY_MATCH)
     
     if not final_text:
         print("⏭️ تجاهل: فشل تنسيق النص")
