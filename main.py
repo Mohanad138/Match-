@@ -24,7 +24,7 @@ CHANNELS = {
     -1009917651232: {
         "name": "بثوث المباريات",
         "target": "@FabriAr2",
-        "source_username": "@NG435x", # 👈 تم تغيير المصدر إلى القناة الجديدة
+        "source_username": "@NG435x", # قناة MEGA 4K
     }
 }
 
@@ -115,7 +115,13 @@ async def process_batch(source_id, messages):
     config = CHANNELS.get(source_id)
     if not config: return
 
-    raw_text = next((m.message for m in messages if m.message), "")
+    # جلب النص حتى لو كانت الرسالة معاد توجيهها (Forwarded)
+    raw_text = ""
+    for m in messages:
+        if m.message:
+            raw_text = m.message
+            break
+            
     if not raw_text: return
 
     if is_duplicate_content(source_id, raw_text): 
