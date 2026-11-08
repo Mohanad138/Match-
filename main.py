@@ -118,7 +118,8 @@ async def process_batch(source_id, messages):
     raw_text = next((m.message for m in messages if m.message), "")
     
     # إذا كان المنشور لا يحتوي على نص ولا صورة، تجاهله
-    if not raw_text and not any(m.media for m in messages): return
+    if not raw_text and not any(msg.media for msg in messages): 
+        return
 
     # إذا كان هناك نص، قم بتنسيقه
     final_text = ""
