@@ -14,8 +14,6 @@ import requests
 TG_API_ID = int(os.getenv("TG_API_ID"))
 TG_API_HASH = os.getenv("TG_API_HASH")
 TG_SESSION = os.getenv("TG_SESSION")
-
-# تم تغيير الاسم هنا إلى MATCH
 GEMINI_KEY_MATCH = os.getenv("GEMINI_KEY_MATCH")
 
 GEMINI_MODEL = "gemini-flash-lite-latest"
@@ -97,7 +95,7 @@ def call_match_links(text, api_key):
 - سطر الوقت: "⏰ | الساعة مساءً بتوقيت مكة المكرمة".
 - سطر المعلّق: "🎤 | الاسم" (بدون تمديد حروف بالاسم).
 - افصل بين كل مباراة والثانية بسطر فاضي.
-- احتفظ بروابط البث (t.me/+) كما هي تماماً في مكانها.
+- احتفظ بروابط البث (t.me/+) وروابط المواقع (arena-koora) كما هي تماماً في مكانها.
 - لا تحذف أي مباراة. لا تضف أي تعليق من عندك.
 - اجعل النص نظيفاً بدون فراغات غريبة بين الحروف.
 
