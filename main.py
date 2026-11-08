@@ -90,13 +90,13 @@ def call_gemini(prompt, api_key, max_retries=3):
 
 def call_match_links(text, api_key):
     prompt = f"""أنت تنسّق منشورات قناة تبث روابط مشاهدة مباريات كرة القدم.
-المطلوب: أعد ترتيب النص التالي وحسّنه ليكون جاهزاً للنشر بالضبط كما في القالب المطلوب، مع تنفيذ الشروط التالية:
-1. احذف أي "تمديد" أو تكرار حروف (اجعل "ليــ ــفــ ــر بــ ــو ل" تصبح "ليفربول"، و "كــ ــر يــ ــســ ــتــ ــا ل" تصبح "كريستال").
-2. ضع أسماء الفرق بالشكل التالي: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 اسم_الفريق 🆚 اسم_الفريق 🏴󠁧󠁢󠁥󠁮󠁧󠁿" (بدون تمديد، مع أعلام إنجلترا).
+المطلوب: أعد ترتيب النص التالي وحسّنه ليكون جاهزاً للنشر، مع تنفيذ الشروط التالية:
+1. احذف أي "تمديد" أو تكرار حروف (اجعل "ليــ ــفــ ــر بــ ــو ل" تصبح "ليفربول").
+2. ضع أسماء الفرق بالشكل التالي: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 اسم_الفريق 🆚 اسم_الفريق 🏴󠁧󠁢󠁥󠁮󠁧󠁿" (بدون تمديد).
 3. سطر الوقت: "⏰ | 05:00 مساء 🇸🇦 / 04:00 مساء 🇪🇬".
 4. سطر المعلق: "🎤 | اسم المعلق".
 5. ابدأ المنشور بعبارة: "تــ تــ ـــا بـــ ــع 🔴🔴 👇🏼" (كما هي بالتمديد).
-6. **احذف نهائياً** (ولا تكتبها إطلاقاً): الرابط الثالث (يوتيوب)، وإعلان المتجر (tvip-live)، والتحذير الأخير (🚨 لتجربة أفضل...).
+6. **احذف نهائياً**: الرابط الثالث (يوتيوب)، وإعلان المتجر (tvip-live)، والتحذير الأخير (🚨 لتجربة أفضل...).
 7. **احتفظ فقط** بالرابط الأول (تيليجرام) والرابط الثاني (الموقع) مع العبارات التي تسبقهما.
 8. اجعل المسافات بين المباريات والروابط طبيعية جداً (سطر فاضي واحد بين كل فقرة).
 
@@ -115,30 +115,39 @@ async def process_batch(source_id, messages):
     config = CHANNELS.get(source_id)
     if not config: return
 
-    # جلب النص حتى لو كانت الرسالة معاد توجيهها (Forwarded)
-    raw_text = ""
-    for m in messages:
-        if m.message:
-            raw_text = m.message
-            break
-            
-    if not raw_text: return
-
-    if is_duplicate_content(source_id, raw_text): 
-        print("⏭️ تجاهل: منشور مكرر")
-        return
-
-    final_text = call_match_links(raw_text, GEMINI_KEY_MATCH)
+    raw_text = next((m.message for m in messages if m.message), "")
     
-    if not final_text:
-        print("⏭️ تجاهل: فشل تنسيق النص")
-        return
+    # إذا كان المنشور لا يحتوي على نص ولا صورة، تجاهله
+    if not raw_text and not any(m.media for m in messages): return
 
-    record_published_text(source_id, raw_text)
+    # إذا كان هناك نص، قم بتنسيقه
+    final_text = ""
+    if raw_text:
+        if is_duplicate_content(source_id, raw_text): 
+            print("⏭️ تجاهل: منشور مكرر")
+            return
+        final_text = call_match_links(raw_text, GEMINI_KEY_MATCH)
+        if final_text:
+            record_published_text(source_id, raw_text)
+        else:
+            final_text = raw_text # إذا فشل التنسيق، انشر النص الأصلي
+
+    media_msgs = [m for m in messages if m.media and not m.video]
 
     try:
-        await client.send_message(config["target"], final_text, parse_mode="html", link_preview=False)
-        print(f"✅ نُشر منشور مباريات بنجاح")
+        # إذا كان هناك صورة أو فيديو، انشره مع النص
+        if media_msgs:
+            to_send = media_msgs[0].photo if isinstance(media_msgs[0].media, MessageMediaWebPage) else media_msgs[0].media
+            if to_send:
+                await client.send_file(config["target"], to_send, caption=final_text or None, parse_mode="html")
+                print(f"✅ نُشر (وسائط + نص) — {config['name']}")
+                return
+        
+        # إذا كان نصاً فقط، انشر النص
+        if final_text:
+            await client.send_message(config["target"], final_text, parse_mode="html", link_preview=False)
+            print(f"✅ نُشر (نص فقط) — {config['name']}")
+            
     except Exception as e:
         print(f"❌ خطأ أثناء النشر: {e}")
 
