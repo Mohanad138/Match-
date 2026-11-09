@@ -24,7 +24,7 @@ CHANNELS = {
     -1009917651232: {
         "name": "بثوث المباريات",
         "target": "@FabriAr2",
-        "source_username": "@NG435x", # قناة MEGA 4K
+        "source_username": "@Arena8x", # 👈 تم التغيير إلى اليوزر القديم للتجربة
     }
 }
 
